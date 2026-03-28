@@ -25,7 +25,7 @@ public class StatClient {
     private final RestClient restClient;
     private final String appName;
 
-    public StatClient(@Value("${stat.server.url}") String serverUrl,
+    public StatClient(@Value("${stat.server.url:http://localhost:9090}") String serverUrl,
                       @Value("${spring.application.name}") String appName) {
         log.info("StatClient baseUrl = {}", serverUrl);
         this.restClient = RestClient.builder()
