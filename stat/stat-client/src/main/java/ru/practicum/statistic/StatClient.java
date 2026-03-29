@@ -3,13 +3,18 @@ package ru.practicum.statistic;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -24,12 +29,19 @@ public class StatClient {
 
     private final RestClient restClient;
     private final String appName;
+    private final DiscoveryClient discoveryClient;
+    private final RetryTemplate retryTemplate;
+    private final String statsServiceId;
 
-    public StatClient(@Value("${stat.server.url:http://localhost:9090}") String serverUrl,
+    public StatClient(DiscoveryClient discoveryClient,
+                      @Value("${stat.server.id:stats-server}") String statsServiceId,
                       @Value("${spring.application.name}") String appName) {
-        log.info("StatClient baseUrl = {}", serverUrl);
+        log.info("StatClient statsServiceId = {}, appName = {}", statsServiceId, appName);
+
+        this.discoveryClient = discoveryClient;
+        this.statsServiceId = statsServiceId;
+        this.retryTemplate = buildRetryTemplate();
         this.restClient = RestClient.builder()
-                .baseUrl(serverUrl)
                 .build();
         this.appName = appName;
     }
@@ -44,7 +56,7 @@ public class StatClient {
 
         try {
             restClient.post()
-                    .uri("/hit")
+                    .uri(makeUri("/hit"))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(dto)
                     .retrieve()
@@ -113,6 +125,38 @@ public class StatClient {
         }
     }
 
+    private RetryTemplate buildRetryTemplate() {
+        RetryTemplate template = new RetryTemplate();
+
+        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
+        backOffPolicy.setBackOffPeriod(3000L);
+        template.setBackOffPolicy(backOffPolicy);
+
+        MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
+        retryPolicy.setMaxAttempts(3);
+        template.setRetryPolicy(retryPolicy);
+
+        return template;
+    }
+
+    private ServiceInstance getInstance() {
+        try {
+            return discoveryClient
+                    .getInstances(statsServiceId)
+                    .getFirst();
+        } catch (Exception e) {
+            throw new StatsServerUnavailable(
+                    "Ошибка обнаружения адреса сервиса статистики с id: " + statsServiceId,
+                    e
+            );
+        }
+    }
+
+    private URI makeUri(String path) {
+        ServiceInstance instance = retryTemplate.execute(context -> getInstance());
+
+        return instance.getUri().resolve(path);
+    }
 
     private String extractClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
