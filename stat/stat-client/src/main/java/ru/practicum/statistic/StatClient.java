@@ -41,10 +41,10 @@ public class StatClient {
 
         this.discoveryClient = discoveryClient;
         this.statsServiceId = statsServiceId;
-        this.retryTemplate = buildRetryTemplate();
+        this.appName = appName;
         this.restClient = RestClient.builder()
                 .build();
-        this.appName = appName;
+        this.retryTemplate = buildRetryTemplate();
     }
 
     public void hit(HttpServletRequest request) {
