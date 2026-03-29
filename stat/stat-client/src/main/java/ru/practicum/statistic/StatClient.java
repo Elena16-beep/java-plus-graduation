@@ -14,6 +14,7 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,10 +41,10 @@ public class StatClient {
 
         this.discoveryClient = discoveryClient;
         this.statsServiceId = statsServiceId;
-        this.retryTemplate = buildRetryTemplate();
+        this.appName = appName;
         this.restClient = RestClient.builder()
                 .build();
-        this.appName = appName;
+        this.retryTemplate = buildRetryTemplate();
     }
 
     public void hit(HttpServletRequest request) {
@@ -87,24 +88,27 @@ public class StatClient {
         String endStr = end.format(FORMATTER);
 
         try {
+            URI uri = buildStatsUri(startStr, endStr, uris, unique);
+
             return restClient.get()
-                    .uri(uriBuilder -> {
-                        var builder = uriBuilder
-                                .path("/stats")
-                                .queryParam("start", startStr)
-                                .queryParam("end", endStr)
-                                .queryParam("unique", unique);
-
-                        if (uris != null && !uris.isEmpty()) {
-                            for (String uri : uris) {
-                                builder.queryParam("uris", uri);
-                            }
-                        }
-
-                        var uri = builder.build();
-                        log.info("Request stats URI: {}", uri.toString());
-                        return uri;
-                    })
+//                    .uri(uriBuilder -> {
+//                        var builder = uriBuilder
+//                                .path("/stats")
+//                                .queryParam("start", startStr)
+//                                .queryParam("end", endStr)
+//                                .queryParam("unique", unique);
+//
+//                        if (uris != null && !uris.isEmpty()) {
+//                            for (String uri : uris) {
+//                                builder.queryParam("uris", uri);
+//                            }
+//                        }
+//
+//                        var uri = builder.build();
+//                        log.info("Request stats URI: {}", uri.toString());
+//                        return uri;
+//                    })
+                    .uri(uri)
                     .retrieve()
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
                         throw new ResponseStatusException(
@@ -150,6 +154,22 @@ public class StatClient {
                     e
             );
         }
+    }
+
+    private URI buildStatsUri(String start, String end, List<String> uris, Boolean unique) {
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromUri(makeUri("/stats"))
+                .queryParam("start", start)
+                .queryParam("end", end)
+                .queryParam("unique", unique);
+
+        if (uris != null && !uris.isEmpty()) {
+            for (String uri : uris) {
+                builder.queryParam("uris", uri);
+            }
+        }
+
+        return builder.build().encode().toUri();
     }
 
     private URI makeUri(String path) {
