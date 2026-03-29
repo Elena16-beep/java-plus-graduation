@@ -41,10 +41,10 @@ public class StatClient {
 
         this.discoveryClient = discoveryClient;
         this.statsServiceId = statsServiceId;
-        this.appName = appName;
+        this.retryTemplate = buildRetryTemplate();
         this.restClient = RestClient.builder()
                 .build();
-        this.retryTemplate = buildRetryTemplate();
+        this.appName = appName;
     }
 
     public void hit(HttpServletRequest request) {
@@ -91,23 +91,6 @@ public class StatClient {
             URI uri = buildStatsUri(startStr, endStr, uris, unique);
 
             return restClient.get()
-//                    .uri(uriBuilder -> {
-//                        var builder = uriBuilder
-//                                .path("/stats")
-//                                .queryParam("start", startStr)
-//                                .queryParam("end", endStr)
-//                                .queryParam("unique", unique);
-//
-//                        if (uris != null && !uris.isEmpty()) {
-//                            for (String uri : uris) {
-//                                builder.queryParam("uris", uri);
-//                            }
-//                        }
-//
-//                        var uri = builder.build();
-//                        log.info("Request stats URI: {}", uri.toString());
-//                        return uri;
-//                    })
                     .uri(uri)
                     .retrieve()
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
