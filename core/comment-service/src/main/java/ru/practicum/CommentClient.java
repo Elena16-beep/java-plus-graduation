@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.*;
 public interface CommentClient {
 
     @PostMapping(value = "/admin/events/{eventId}/comments/{commentId}", consumes = "application/json")
-    ResponseEntity<String> addComment(@PathVariable Long userId,
+    ResponseEntity<String> addComment(@RequestBody String body,
                                       @PathVariable Long eventId,
-                                      @RequestBody String body);
+                                      @PathVariable Long userId);
 
     @PatchMapping(value = "/admin/events/{eventId}/comments/{commentId}", consumes = "application/json")
     ResponseEntity<String> patchComment(@PathVariable Long eventId,
