@@ -5,6 +5,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.concurrent.CompletableFuture;
@@ -51,22 +52,17 @@ public class RequestController {
 
     // Fallback методы
     private ResponseEntity<String> fallbackGetUserRequests(Long userId, Exception ex) {
-        log.warn("Fallback для getUserRequests. userId={}, ошибка: {}", userId, ex.getMessage());
-
-        return ResponseEntity.ok("{\"requests\": [], \"fallback\": true, \"userId\": " + userId + "}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service unavailable\", \"userId\": " + userId + "}");
     }
 
-    private CompletableFuture<ResponseEntity<String>> fallbackAddRequest(Long userId, Long eventId, Exception ex) {
-        log.warn("Fallback для addRequest. userId={}, eventId={}, ошибка: {}", userId, eventId, ex.getMessage());
-
-        return CompletableFuture.completedFuture(
-                ResponseEntity.accepted().body("{\"status\": \"QUEUED\", \"fallback\": true}")
-        );
+    private ResponseEntity<String> fallbackAddRequest(Long userId, Long eventId, Exception ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service unavailable\", \"userId\": " + userId + ", \"eventId\": " + eventId + "}");
     }
 
     private ResponseEntity<String> fallbackCancelRequest(Long userId, Long requestId, Exception ex) {
-        log.warn("Fallback для cancelRequest. userId={}, requestId={}, ошибка: {}", userId, requestId, ex.getMessage());
-
-        return ResponseEntity.ok("{\"status\": \"PENDING\", \"fallback\": true}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service unavailable\", \"userId\": " + userId + ", \"requestId\": " + requestId + "}");
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @FeignClient(
         name = "event-service",
-        fallbackFactory = EventRequestClientFallbackFactory.class,
+        fallbackFactory = EventRequestClientFallback.class,
         configuration = FeignConfig.class
 )
 public interface EventRequestClient {

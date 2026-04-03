@@ -10,7 +10,6 @@ import ru.practicum.compilations.dto.NewCompilationDto;
 import ru.practicum.compilations.dto.UpdateCompilationDto;
 import ru.practicum.compilations.service.CompilationService;
 
-
 @Validated
 @RestController
 @RequestMapping("admin/compilations")
@@ -21,7 +20,6 @@ public class AdminCompilationController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CompilationDto createCompilation(@Valid @RequestBody NewCompilationDto newDto) {
-        CompilationDto result = compilationService.create(newDto);
         return compilationService.create(newDto);
     }
 
