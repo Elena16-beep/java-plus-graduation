@@ -27,7 +27,9 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
                 }
 
                 // Возвращаем пустой список пользователей
-                return ResponseEntity.ok("{\"users\": [], \"default\": true, \"message\": \"Сервис пользователей временно недоступен\"}");
+//                return ResponseEntity.ok("{\"users\": [], \"default\": true, \"message\": \"Сервис пользователей временно недоступен\"}");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
             }
 
             @Override
@@ -35,8 +37,10 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
                 log.warn("Fallback createUser: body={}, причина: {}", body, cause.getMessage());
 
                 // Для создания пользователя возвращаем ACCEPTED с обещанием обработать позже
-                return ResponseEntity.status(HttpStatus.ACCEPTED)
-                        .body("{\"status\": \"QUEUED\", \"message\": \"Создание пользователя будет выполнено позже\", \"data\": " + body + "}");
+//                return ResponseEntity.status(HttpStatus.ACCEPTED)
+//                        .body("{\"status\": \"QUEUED\", \"message\": \"Создание пользователя будет выполнено позже\", \"data\": " + body + "}");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
             }
 
             @Override
@@ -44,8 +48,10 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
                 log.warn("Fallback deleteUser: userId={}, причина: {}", userId, cause.getMessage());
 
                 // Для удаления возвращаем ACCEPTED
-                return ResponseEntity.status(HttpStatus.ACCEPTED)
-                        .body("{\"status\": \"QUEUED\", \"message\": \"Удаление пользователя запланировано\", \"userId\": " + userId + "}");
+//                return ResponseEntity.status(HttpStatus.ACCEPTED)
+//                        .body("{\"status\": \"QUEUED\", \"message\": \"Удаление пользователя запланировано\", \"userId\": " + userId + "}");
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
             }
         };
     }

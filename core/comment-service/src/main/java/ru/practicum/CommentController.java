@@ -88,45 +88,59 @@ public class CommentController {
     private ResponseEntity<String> fallbackPatchComment(Long eventId, Long commentId, Boolean published, Exception ex) {
         log.warn("Fallback patchComment: {}", ex.getMessage());
 
-        return ResponseEntity.ok("{\"status\": \"PENDING\", \"message\": \"Изменение статуса запланировано\"}");
+//        return ResponseEntity.ok("{\"status\": \"PENDING\", \"message\": \"Изменение статуса запланировано\"}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackAddComment(Long userId, Long eventId, String body, Exception ex) {
         log.warn("Fallback addComment: {}", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body("{\"status\": \"QUEUED\", \"message\": \"Комментарий будет добавлен позже\"}");
+//        return ResponseEntity.status(HttpStatus.ACCEPTED)
+//                .body("{\"status\": \"QUEUED\", \"message\": \"Комментарий будет добавлен позже\"}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackGetAllComments(Long userId, Long eventId, Exception ex) {
         log.warn("Fallback getAllComments: {}", ex.getMessage());
 
-        return ResponseEntity.ok("{\"comments\": [], \"default\": true}");
+//        return ResponseEntity.ok("{\"comments\": [], \"default\": true}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackGetCommentById(Long eventId, Long commentId, Exception ex) {
         log.warn("Fallback getCommentById: {}", ex.getMessage());
 
-        return ResponseEntity.ok("{\"comment\": null, \"available\": false}");
+//        return ResponseEntity.ok("{\"comment\": null, \"available\": false}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackUpdateComment(Long userId, Long eventId, Long commentId, String body, Exception ex) {
         log.warn("Fallback updateComment: {}", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body("{\"status\": \"QUEUED\", \"message\": \"Обновление комментария запланировано\"}");
+//        return ResponseEntity.status(HttpStatus.ACCEPTED)
+//                .body("{\"status\": \"QUEUED\", \"message\": \"Обновление комментария запланировано\"}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackDeleteComment(Long userId, Long eventId, Long commentId, Exception ex) {
         log.warn("Fallback deleteComment: {}", ex.getMessage());
 
-        return ResponseEntity.accepted()
-                .body("{\"status\": \"QUEUED\", \"message\": \"Удаление комментария запланировано\"}");
+//        return ResponseEntity.accepted()
+//                .body("{\"status\": \"QUEUED\", \"message\": \"Удаление комментария запланировано\"}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 
     private ResponseEntity<String> fallbackGetComments(Long eventId, Exception ex) {
         log.warn("Fallback getComments: {}", ex.getMessage());
 
-        return ResponseEntity.ok("{\"comments\": [], \"default\": true}");
+//        return ResponseEntity.ok("{\"comments\": [], \"default\": true}");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body("{\"error\": \"Event service is temporarily unavailable. Please try again later.\"}");
     }
 }
