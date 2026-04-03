@@ -4,7 +4,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "event-service")
+@FeignClient(
+        name = "event-service",
+        fallbackFactory = CommentClientFallbackFactory.class,
+        configuration = FeignConfig.class
+)
 public interface CommentClient {
 
     @PostMapping(value = "/admin/events/{eventId}/comments/{commentId}", consumes = "application/json")
@@ -22,7 +26,7 @@ public interface CommentClient {
                                             @PathVariable Long eventId);
 
     @GetMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
-    ResponseEntity<String> updateComment(@PathVariable Long userId,
+    ResponseEntity<String> getCommentByCommentId(@PathVariable Long userId,
                                          @PathVariable Long eventId,
                                          @PathVariable Long commentId);
 

@@ -34,7 +34,7 @@ public class PrivateCommentController {
 
 
     @GetMapping("/{commentId}")
-    public CommentFullDto updateComment(@PathVariable Long userId,
+    public CommentFullDto getCommentByCommentId(@PathVariable Long userId,
                                         @PathVariable Long eventId,
                                         @PathVariable Long commentId
     ) {

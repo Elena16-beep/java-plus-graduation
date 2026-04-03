@@ -4,7 +4,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "event-service")
+@FeignClient(
+        name = "event-service",
+        fallbackFactory = EventRequestClientFallbackFactory.class,
+        configuration = FeignConfig.class
+)
 public interface EventRequestClient {
 
     @GetMapping("/users/{userId}/requests")
