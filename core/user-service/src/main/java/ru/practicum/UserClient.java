@@ -5,11 +5,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@FeignClient(
-        name = "event-service",
-        fallbackFactory = UserClientFallbackFactory.class,
-        configuration = FeignConfig.class
-)
+//@FeignClient(
+//        name = "event-service",
+//        fallbackFactory = UserClientFallbackFactory.class,
+//        configuration = FeignConfig.class
+//)
+@FeignClient(name = "event-service")
 public interface UserClient {
 
     @GetMapping("/admin/users")
