@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 //        configuration = FeignConfig.class
 //)
 @FeignClient(name = "event-service")
+//@FeignClient(name = "event-service", fallbackFactory = CommentClientFallbackFactory.class)
 public interface CommentClient {
 
     @PostMapping(value = "/admin/events/{eventId}/comments/{commentId}", consumes = "application/json")

@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 //        fallbackFactory = EventRequestClientFallback.class,
 //        configuration = FeignConfig.class
 //)
-@FeignClient(name = "event-service")
+@FeignClient(name = "event-service", fallbackFactory = EventRequestClientFallback.class)
+//@FeignClient(name = "event-service")
 public interface EventRequestClient {
 
     @GetMapping("/users/{userId}/requests")
