@@ -22,71 +22,81 @@ public class UserController {
     public ResponseEntity<String> getUsers(@RequestParam(required = false) List<Long> ids,
                                            @RequestParam(required = false) Integer from,
                                            @RequestParam(required = false) Integer size) {
-        log.info("Getting users: ids={}, from={}, size={}", ids, from, size);
-        ResponseEntity<String> response = userClient.getUsers(ids, from, size);
+        log.info("=== GET /admin/users called ===");
+        log.info("ids={}, from={}, size={}", ids, from, size);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
+        try {
+            ResponseEntity<String> response = userClient.getUsers(ids, from, size);
+            log.info("Response status: {}", response.getStatusCode());
+            log.info("Response body: {}", response.getBody());
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.warn("Event service returned error: {}", response.getStatusCode());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Event service returned error\", \"status\": " + response.getStatusCodeValue() + "}");
+            }
+
             return response;
+        } catch (Exception e) {
+            log.error("Exception in getUsers: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Internal error: " + e.getMessage() + "\"}");
         }
-
-        // Обработка различных кодов ошибок
-        if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
-            log.warn("Users not found");
-
-            return ResponseEntity.ok("{\"users\": [], \"message\": \"No users found\"}");
-        }
-
-        log.warn("Event service returned error: {}", response.getStatusCode());
-
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body("{\"error\": \"Event service unavailable\", \"status\": " + response.getStatusCodeValue() + "}");
     }
 
     @PostMapping
     @Retry(name = "event-service-retry")
     @CircuitBreaker(name = "event-service-cb")
     public ResponseEntity<String> createUser(@RequestBody(required = false) String body) {
-        log.info("Creating user: body={}", body);
-        ResponseEntity<String> response = userClient.createUser(body);
+        log.info("=== POST /admin/users called ===");
+        log.info("Request body: {}", body);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
+        try {
+            // Валидация на уровне контроллера
+            if (body == null || body.trim().isEmpty()) {
+                log.warn("Empty request body");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("{\"error\": \"Request body is required\"}");
+            }
+
+            ResponseEntity<String> response = userClient.createUser(body);
+            log.info("Response status: {}", response.getStatusCode());
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.warn("Event service returned error on create: {}", response.getStatusCode());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Failed to create user\", \"status\": " + response.getStatusCodeValue() + "}");
+            }
+
             return response;
+        } catch (Exception e) {
+            log.error("Exception in createUser: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Internal error: " + e.getMessage() + "\"}");
         }
-
-        if (response.getStatusCode() == HttpStatus.CONFLICT) {
-            log.warn("User already exists");
-
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("{\"error\": \"User already exists\"}");
-        }
-
-        log.warn("Event service returned error on create user: {}", response.getStatusCode());
-
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body("{\"status\": \"QUEUED\", \"message\": \"User creation queued\", \"data\": " + body + "}");
     }
 
     @DeleteMapping("/{userId}")
     @Retry(name = "event-service-retry")
     @CircuitBreaker(name = "event-service-cb")
     public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
-        log.info("Deleting user: userId={}", userId);
-        ResponseEntity<String> response = userClient.deleteUser(userId);
+        log.info("=== DELETE /admin/users/{} called ===", userId);
 
-        if (response.getStatusCode().is2xxSuccessful()) {
+        try {
+            ResponseEntity<String> response = userClient.deleteUser(userId);
+            log.info("Response status: {}", response.getStatusCode());
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.warn("Event service returned error on delete: {}", response.getStatusCode());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("{\"error\": \"Failed to delete user\", \"status\": " + response.getStatusCodeValue() + "}");
+            }
+
             return response;
+        } catch (Exception e) {
+            log.error("Exception in deleteUser: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Internal error: " + e.getMessage() + "\"}");
         }
-
-        if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
-            log.warn("User not found: userId={}", userId);
-
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("{\"error\": \"User not found\", \"userId\": " + userId + "}");
-        }
-
-        log.warn("Event service returned error on delete user: {}", response.getStatusCode());
-
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body("{\"status\": \"QUEUED\", \"message\": \"User deletion queued\", \"userId\": " + userId + "}");
     }
 }
