@@ -10,7 +10,6 @@ import java.util.List;
         fallback = UserClientFallback.class,
         configuration = FeignConfig.class
 )
-//@FeignClient(name = "event-service")
 public interface UserClient {
 
     @GetMapping("/admin/users")
