@@ -4,12 +4,12 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-//@FeignClient(
-//        name = "event-service",
-//        fallbackFactory = CommentClientFallbackFactory.class,
-//        configuration = FeignConfig.class
-//)
-@FeignClient(name = "event-service")
+@FeignClient(
+        name = "event-service",
+        fallback = CommentClientFallback.class,
+        configuration = FeignConfig.class
+)
+//@FeignClient(name = "event-service")
 //@FeignClient(name = "event-service", fallbackFactory = CommentClientFallbackFactory.class)
 public interface CommentClient {
 
