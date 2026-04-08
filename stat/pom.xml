@@ -12,13 +12,13 @@
     <artifactId>stat</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>serialization</module>
-        <module>collector</module>
-        <module>aggregator</module>
-        <module>analyzer</module>
         <module>stat-client</module>
         <module>stat-dto</module>
         <module>stat-server</module>
+        <module>aggregator</module>
+        <module>analyzer</module>
+        <module>serialization</module>
+        <module>collector</module>
     </modules>
 
     <dependencyManagement>
