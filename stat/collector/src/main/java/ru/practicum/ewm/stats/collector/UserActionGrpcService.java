@@ -1,4 +1,4 @@
-package ru.practicum;
+package ru.practicum.ewm.stats.collector;
 
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
