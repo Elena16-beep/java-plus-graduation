@@ -16,8 +16,8 @@
         <module>stat-dto</module>
         <module>stat-server</module>
         <module>serialization</module>
+        <module>collector</module>
     </modules>
-
 
     <dependencyManagement>
         <dependencies>

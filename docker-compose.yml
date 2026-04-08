@@ -47,22 +47,15 @@ services:
       - POSTGRES_USER=main
       - POSTGRES_PASSWORD=main
 
-  reco-db:
-          image: postgres:16.1
-          container_name: reco-db
-          ports:
-            - "7432:5432"
-          environment:
-            - POSTGRES_DB=reco
-            - POSTGRES_USER=reco
-            - POSTGRES_PASSWORD=reco
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper
+  analyzer-db:
+    image: postgres:16.1
+    container_name: analyzer-db
+    ports:
+      - "6437:5432"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - POSTGRES_DB=analyzer
+      - POSTGRES_USER=analyzer
+      - POSTGRES_PASSWORD=analyzer
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
