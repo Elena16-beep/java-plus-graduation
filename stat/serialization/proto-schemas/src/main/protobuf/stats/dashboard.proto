@@ -5,7 +5,7 @@ package stats.service.dashboard;
 option java_multiple_files = true;
 option java_package = "ru.practicum.ewm.stats.proto.dashboard";
 
-import "messages.proto";
+import "stats/messages.proto";
 
 service RecommendationsController {
     rpc GetRecommendationsForUser(stats.message.UserPredictionsRequestProto)

@@ -34,6 +34,10 @@ public interface EventService {
                                      LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                      Boolean onlyAvailable, String sort, Integer from, Integer size);
 
+    List<EventShortDto> getRecommendations(Long userId, Integer size);
+
+    void addLike(Long userId, Long eventId);
+
     List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId);
 
     EventRequestStatusUpdateResult updateRequests(Long userId, Long eventId, EventRequestStatusUpdateRequest request);

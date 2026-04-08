@@ -1,8 +1,8 @@
 package ru.practicum.statistic;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
@@ -15,14 +15,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.practicum.ewm.stats.proto.ActionTypeProto;
+import ru.practicum.ewm.stats.proto.RecommendedEventProto;
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
 @Slf4j
+@Deprecated
 @Component
+@RequiredArgsConstructor
 public class StatClient {
 
     private static final DateTimeFormatter FORMATTER =
@@ -33,18 +38,27 @@ public class StatClient {
     private final DiscoveryClient discoveryClient;
     private final RetryTemplate retryTemplate;
     private final String statsServiceId;
+    private final CollectorClient collectorClient;
+    private final AnalyzerClient analyzerClient;
 
-    public StatClient(DiscoveryClient discoveryClient,
-                      @Value("${stat.server.id:stats-server}") String statsServiceId,
-                      @Value("${spring.application.name}") String appName) {
-        log.info("StatClient statsServiceId = {}, appName = {}", statsServiceId, appName);
+    public void sendUserAction(long userId, long eventId, ActionTypeProto actionType, Instant timestamp) {
+        collectorClient.sendUserAction(userId, eventId, actionType, timestamp);
+    }
 
-        this.discoveryClient = discoveryClient;
-        this.statsServiceId = statsServiceId;
-        this.appName = appName;
-        this.restClient = RestClient.builder()
-                .build();
-        this.retryTemplate = buildRetryTemplate();
+    public void sendUserAction(long userId, long eventId, ActionTypeProto actionType) {
+        collectorClient.sendUserAction(userId, eventId, actionType);
+    }
+
+    public Stream<RecommendedEventProto> getRecommendationsForUser(long userId, int maxResults) {
+        return analyzerClient.getRecommendationsForUser(userId, maxResults);
+    }
+
+    public Stream<RecommendedEventProto> getSimilarEvents(long eventId, long userId, int maxResults) {
+        return analyzerClient.getSimilarEvents(eventId, userId, maxResults);
+    }
+
+    public Stream<RecommendedEventProto> getInteractionsCount(List<Long> eventIds) {
+        return analyzerClient.getInteractionsCount(eventIds);
     }
 
     public void hit(HttpServletRequest request) {
