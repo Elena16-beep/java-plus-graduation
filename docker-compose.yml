@@ -57,6 +57,13 @@ services:
       - POSTGRES_USER=analyzer
       - POSTGRES_PASSWORD=analyzer
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
@@ -79,5 +86,7 @@ services:
       - kafka
     entrypoint: ["/bin/sh", "-c"]
     command: >
-      "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.user-actions.v1 --partitions 1 --replication-factor 1 &&
-       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.events-similarity.v1 --partitions 1 --replication-factor 1"
+      "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.user-actions.v1 /
+                    --partitions 1 --replication-factor 1 && /
+       kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.events-similarity.v1 /
+                    --partitions 1 --replication-factor 1"
