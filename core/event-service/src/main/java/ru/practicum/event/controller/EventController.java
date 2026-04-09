@@ -113,7 +113,6 @@ public class EventController {
     }
 
     @PutMapping("/events/{eventId}/like")
-//    @ResponseStatus(HttpStatus.OK)
     public void likeEvent(@PathVariable Long eventId,
                           @RequestHeader("X-EWM-USER-ID") long userId) {
         eventService.addLike(userId, eventId);

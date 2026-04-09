@@ -432,60 +432,6 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-//    private Long getEventViews(Long eventId) {
-//        try {
-//            Event event = eventRepository.findById(eventId)
-//                    .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
-//
-//            if (event.getPublishedOn() == null) {
-//                return 0L;
-//            }
-//
-//            LocalDateTime start = event.getPublishedOn();
-//            LocalDateTime end = LocalDateTime.now();
-//            List<String> uris = List.of("/events/" + eventId);
-//
-//            return statClient.getStatistics(start, end, uris, true)
-//                    .stream()
-//                    .findFirst()
-//                    .map(stats -> stats.getHits() != null ? stats.getHits() : 0L)
-//                    .orElse(0L);
-//        } catch (Exception e) {
-//            return 0L;
-//        }
-//    }
-//
-//    private Map<Long, Long> getEventsViews(List<Event> events) {
-//        try {
-//            if (events.isEmpty()) {
-//                return Collections.emptyMap();
-//            }
-//
-//            LocalDateTime start = events.stream()
-//                    .map(Event::getPublishedOn)
-//                    .filter(Objects::nonNull)
-//                    .min(LocalDateTime::compareTo)
-//                    .orElse(LocalDateTime.now().minusYears(1));
-//
-//            List<String> uris = events.stream()
-//                    .map(event -> "/events/" + event.getId())
-//                    .collect(Collectors.toList());
-//
-//            LocalDateTime end = LocalDateTime.now();
-//
-//            return statClient.getStatistics(start, end, uris, true)
-//                    .stream()
-//                    .collect(Collectors.toMap(
-//                            stats -> extractEventIdFromUri(stats.getUri()),
-//                            stats -> stats.getHits() != null ? stats.getHits() : 0L,
-//                            (existing, replacement) -> existing
-//                    ));
-//        } catch (Exception e) {
-//            return events.stream()
-//                    .collect(Collectors.toMap(Event::getId, event -> 0L));
-//        }
-//    }
-
     private Long extractEventIdFromUri(String uri) {
         try {
             String[] parts = uri.split("/");
