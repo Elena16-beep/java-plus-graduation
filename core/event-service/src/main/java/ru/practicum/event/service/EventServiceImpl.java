@@ -270,14 +270,14 @@ public class EventServiceImpl implements EventService {
         Map<Long, Double> ratingsMap = getEventsRatings(events);
         List<EventShortDto> dtos = events.stream()
                 .map(EventMapper::mapToShortDto)
-                .toList();
+                .collect(Collectors.toList());
 
         dtos.forEach(dto -> dto.setRating(ratingsMap.getOrDefault(dto.getId(), 0.0)));
 
         if ("VIEWS".equalsIgnoreCase(sort) || "RATING".equalsIgnoreCase(sort)) {
             dtos = dtos.stream()
                     .sorted(Comparator.comparing(EventShortDto::getRating).reversed())
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         return dtos;
@@ -289,8 +289,7 @@ public class EventServiceImpl implements EventService {
         List<ru.practicum.ewm.stats.proto.RecommendedEventProto> recommendations;
 
         try {
-            recommendations = analyzerClient.getRecommendationsForUser(userId, limit)
-                    .toList();
+            recommendations = analyzerClient.getRecommendationsForUser(userId, limit).toList();
         } catch (Exception e) {
             return Collections.emptyList();
         }
@@ -301,7 +300,7 @@ public class EventServiceImpl implements EventService {
 
         List<Long> recommendedIds = recommendations.stream()
                 .map(RecommendedEventProto::getEventId)
-                .toList();
+                .collect(Collectors.toList());
 
         Map<Long, Double> scores = recommendations.stream()
                 .collect(Collectors.toMap(
@@ -313,12 +312,12 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findEventsByIdIn(recommendedIds);
         List<EventShortDto> dtos = events.stream()
                 .map(EventMapper::mapToShortDto)
-                .toList();
+                .collect(Collectors.toList());
 
         dtos.forEach(dto -> dto.setRating(scores.getOrDefault(dto.getId(), 0.0)));
         dtos = dtos.stream()
                 .sorted(Comparator.comparing(EventShortDto::getRating).reversed())
-                .toList();
+                .collect(Collectors.toList());
 
         return dtos;
     }
@@ -448,7 +447,7 @@ public class EventServiceImpl implements EventService {
 
         List<Long> ids = events.stream()
                 .map(Event::getId)
-                .toList();
+                .collect(Collectors.toList());
 
         try {
             return analyzerClient.getInteractionsCount(ids)
