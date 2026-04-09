@@ -6,7 +6,7 @@ option java_multiple_files = true;
 option java_package = "ru.practicum.ewm.stats.proto.collector";
 
 import "google/protobuf/empty.proto";
-import "stats/messages.proto";
+import "messages.proto";
 
 service UserActionController {
     rpc CollectUserAction (stats.message.UserActionProto)
