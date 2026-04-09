@@ -47,15 +47,22 @@ services:
       - POSTGRES_USER=main
       - POSTGRES_PASSWORD=main
 
-  analyzer-db:
+  reco-db:
     image: postgres:16.1
-    container_name: analyzer-db
+    container_name: reco-db
     ports:
-      - "6437:5432"
+      - "7432:5432"
     environment:
-      - POSTGRES_DB=analyzer
-      - POSTGRES_USER=analyzer
-      - POSTGRES_PASSWORD=analyzer
+      - POSTGRES_DB=reco
+      - POSTGRES_USER=reco
+      - POSTGRES_PASSWORD=reco
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -77,7 +84,7 @@ services:
     container_name: kafka-init
     depends_on:
       - kafka
-    entrypoint: [ "/bin/sh", "-c" ]
+    entrypoint: ["/bin/sh", "-c"]
     command: >
       "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.user-actions.v1 --partitions 1 --replication-factor 1 &&
        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic stats.events-similarity.v1 --partitions 1 --replication-factor 1"
