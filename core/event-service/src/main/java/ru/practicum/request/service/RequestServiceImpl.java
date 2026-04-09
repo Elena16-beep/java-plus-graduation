@@ -6,14 +6,15 @@ import org.springframework.stereotype.Service;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import ru.practicum.ewm.stats.proto.ActionTypeProto;
 import ru.practicum.exception.*;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
 import ru.practicum.request.model.RequestStatus;
 import ru.practicum.request.repository.RequestRepository;
+import ru.practicum.statistic.CollectorClient;
 import ru.practicum.user.repository.UserRepository;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class RequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
+    private final CollectorClient collectorClient;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId, HttpServletRequest request) {
@@ -72,7 +74,11 @@ public class RequestServiceImpl implements RequestService {
             request.setStatus(RequestStatus.CONFIRMED);
             request.setCreatedOn(LocalDateTime.now());
         }
-        return RequestMapper.requestToParticipationRequestDto(requestRepository.save(request));
+
+        request = requestRepository.save(request);
+        collectorClient.sendUserAction(userId, eventId, ActionTypeProto.ACTION_REGISTER);
+
+        return RequestMapper.requestToParticipationRequestDto(request);
     }
 
     @Override
