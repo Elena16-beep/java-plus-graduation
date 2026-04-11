@@ -28,7 +28,6 @@ import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.statistic.CollectorClient;
-import ru.practicum.statistic.StatClient;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -36,7 +35,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
-    private final StatClient statClient;
     private final CollectorClient collectorClient;
 
     @PostMapping("/users/{userId}/events")

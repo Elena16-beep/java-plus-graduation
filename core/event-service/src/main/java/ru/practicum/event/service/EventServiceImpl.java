@@ -26,7 +26,6 @@ import ru.practicum.request.model.Request;
 import ru.practicum.request.model.RequestStatus;
 import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.statistic.AnalyzerClient;
-import ru.practicum.statistic.StatClient;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 import java.time.LocalDateTime;
@@ -43,7 +42,6 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
-    private final StatClient statClient;
     private final AnalyzerClient analyzerClient;
 
     @Override
@@ -206,7 +204,7 @@ public class EventServiceImpl implements EventService {
                 ));
 
         eventShortDtos.forEach(dto -> {
-            dto.setCommentsCount(commentsWithCountMap.get(dto.getId()));
+            dto.setCommentsCount(commentsWithCountMap.getOrDefault(dto.getId(), 0L));
             dto.setRating(ratingsMap.getOrDefault(dto.getId(), 0.0));
         });
 
