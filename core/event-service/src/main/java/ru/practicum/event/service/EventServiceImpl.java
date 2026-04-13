@@ -16,6 +16,7 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import ru.practicum.ewm.stats.proto.RecommendedEventProto;
 import ru.practicum.exception.*;
 import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.request.dto.EventRequestStatusUpdateResult;
@@ -24,10 +25,9 @@ import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
 import ru.practicum.request.model.RequestStatus;
 import ru.practicum.request.repository.RequestRepository;
-import ru.practicum.statistic.StatClient;
+import ru.practicum.statistic.AnalyzerClient;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,7 +42,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
-    private final StatClient statClient;
+    private final AnalyzerClient analyzerClient;
 
     @Override
     @Transactional
@@ -158,10 +158,10 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
 
         List<Event> events = Collections.singletonList(event);
-        Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Double eventRating = getEventsRatings(events).getOrDefault(eventId, 0.0);
         Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
-        eventFullDto.setViews(eventViews);
+        eventFullDto.setRating(eventRating);
         eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
@@ -177,10 +177,10 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Event> events = Collections.singletonList(event);
-        Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Double eventRating = getEventsRatings(events).getOrDefault(eventId, 0.0);
         Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
-        eventFullDto.setViews(eventViews);
+        eventFullDto.setRating(eventRating);
         eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
@@ -190,7 +190,7 @@ public class EventServiceImpl implements EventService {
     public List<EventShortDto> getAllByUser(Long userId, Integer from, Integer size) {
         Pageable pageable = PageRequest.of(from / size, size);
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable).getContent();
-        Map<Long, Long> viewsMap = getEventsViews(events);
+        Map<Long, Double> ratingsMap = getEventsRatings(events);
 
         List<EventShortDto> eventShortDtos = events.stream()
                 .map(EventMapper::mapToShortDto)
@@ -204,8 +204,8 @@ public class EventServiceImpl implements EventService {
                 ));
 
         eventShortDtos.forEach(dto -> {
-            dto.setCommentsCount(commentsWithCountMap.get(dto.getId()));
-            dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
+            dto.setCommentsCount(commentsWithCountMap.getOrDefault(dto.getId(), 0L));
+            dto.setRating(ratingsMap.getOrDefault(dto.getId(), 0.0));
         });
 
         return eventShortDtos;
@@ -227,9 +227,14 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = eventRepository.findEventsWithFilters(users, eventStates, categories, rangeStart, rangeEnd, pageable);
 
-        return events.stream()
+        List<EventFullDto> dtos = events.stream()
                 .map(EventMapper::mapToFullDto)
                 .collect(Collectors.toList());
+
+        Map<Long, Double> ratingsMap = getEventsRatings(events);
+        dtos.forEach(dto -> dto.setRating(ratingsMap.getOrDefault(dto.getId(), 0.0)));
+
+        return dtos;
     }
 
     @Override
@@ -247,8 +252,6 @@ public class EventServiceImpl implements EventService {
         Pageable pageable;
         if ("EVENT_DATE".equalsIgnoreCase(sort)) {
             pageable = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
-        } else if ("VIEWS".equalsIgnoreCase(sort)) {
-            pageable = PageRequest.of(from / size, size, Sort.by("views").descending());
         } else {
             pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
         }
@@ -262,9 +265,72 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findPublishedEventsWithFilters(
                 textForSearch, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
 
-        return events.stream()
+        Map<Long, Double> ratingsMap = getEventsRatings(events);
+        List<EventShortDto> dtos = events.stream()
                 .map(EventMapper::mapToShortDto)
                 .collect(Collectors.toList());
+
+        dtos.forEach(dto -> dto.setRating(ratingsMap.getOrDefault(dto.getId(), 0.0)));
+
+        if ("VIEWS".equalsIgnoreCase(sort) || "RATING".equalsIgnoreCase(sort)) {
+            dtos = dtos.stream()
+                    .sorted(Comparator.comparing(EventShortDto::getRating).reversed())
+                    .collect(Collectors.toList());
+        }
+
+        return dtos;
+    }
+
+    @Override
+    public List<EventShortDto> getRecommendations(Long userId, Integer size) {
+        int limit = size != null ? size : 10;
+        List<ru.practicum.ewm.stats.proto.RecommendedEventProto> recommendations;
+
+        try {
+            recommendations = analyzerClient.getRecommendationsForUser(userId, limit).toList();
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+
+        if (recommendations.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> recommendedIds = recommendations.stream()
+                .map(RecommendedEventProto::getEventId)
+                .collect(Collectors.toList());
+
+        Map<Long, Double> scores = recommendations.stream()
+                .collect(Collectors.toMap(
+                        RecommendedEventProto::getEventId,
+                        RecommendedEventProto::getScore,
+                        (existing, replacement) -> existing
+                ));
+
+        List<Event> events = eventRepository.findEventsByIdIn(recommendedIds);
+        List<EventShortDto> dtos = events.stream()
+                .map(EventMapper::mapToShortDto)
+                .collect(Collectors.toList());
+
+        dtos.forEach(dto -> dto.setRating(scores.getOrDefault(dto.getId(), 0.0)));
+        dtos = dtos.stream()
+                .sorted(Comparator.comparing(EventShortDto::getRating).reversed())
+                .collect(Collectors.toList());
+
+        return dtos;
+    }
+
+    @Override
+    public void addLike(Long userId, Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
+
+        boolean isInitiator = event.getInitiator().getId().equals(userId);
+        boolean hasRequest = !requestRepository.findByRequesterIdAndEventId(userId, eventId).isEmpty();
+
+        if (!isInitiator && !hasRequest) {
+            throw new BadRequestException("Пользователь не посещал событие");
+        }
     }
 
     @Override
@@ -363,66 +429,34 @@ public class EventServiceImpl implements EventService {
         return result;
     }
 
-    private Long getEventViews(Long eventId) {
-        try {
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
-
-            if (event.getPublishedOn() == null) {
-                return 0L;
-            }
-
-            LocalDateTime start = event.getPublishedOn();
-            LocalDateTime end = LocalDateTime.now();
-            List<String> uris = List.of("/events/" + eventId);
-
-            return statClient.getStatistics(start, end, uris, true)
-                    .stream()
-                    .findFirst()
-                    .map(stats -> stats.getHits() != null ? stats.getHits() : 0L)
-                    .orElse(0L);
-        } catch (Exception e) {
-            return 0L;
-        }
-    }
-
-    private Map<Long, Long> getEventsViews(List<Event> events) {
-        try {
-            if (events.isEmpty()) {
-                return Collections.emptyMap();
-            }
-
-            LocalDateTime start = events.stream()
-                    .map(Event::getPublishedOn)
-                    .filter(Objects::nonNull)
-                    .min(LocalDateTime::compareTo)
-                    .orElse(LocalDateTime.now().minusYears(1));
-
-            List<String> uris = events.stream()
-                    .map(event -> "/events/" + event.getId())
-                    .collect(Collectors.toList());
-
-            LocalDateTime end = LocalDateTime.now();
-
-            return statClient.getStatistics(start, end, uris, true)
-                    .stream()
-                    .collect(Collectors.toMap(
-                            stats -> extractEventIdFromUri(stats.getUri()),
-                            stats -> stats.getHits() != null ? stats.getHits() : 0L,
-                            (existing, replacement) -> existing
-                    ));
-        } catch (Exception e) {
-            return events.stream()
-                    .collect(Collectors.toMap(Event::getId, event -> 0L));
-        }
-    }
-
     private Long extractEventIdFromUri(String uri) {
         try {
             String[] parts = uri.split("/");
             return Long.parseLong(parts[parts.length - 1]);
         } catch (Exception e) {
             throw new ValidationException("Неверный формат URI = " + uri);
+        }
+    }
+
+    private Map<Long, Double> getEventsRatings(List<Event> events) {
+        if (events.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Long> ids = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        try {
+            return analyzerClient.getInteractionsCount(ids)
+                    .collect(Collectors.toMap(
+                            RecommendedEventProto::getEventId,
+                            RecommendedEventProto::getScore,
+                            (existing, replacement) -> existing
+                    ));
+        } catch (Exception e) {
+            return events.stream()
+                    .collect(Collectors.toMap(Event::getId, event -> 0.0));
         }
     }
 }

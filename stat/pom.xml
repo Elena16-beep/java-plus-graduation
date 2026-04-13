@@ -12,11 +12,15 @@
     <artifactId>stat</artifactId>
     <packaging>pom</packaging>
     <modules>
+        <module>proto-schemas</module>
+        <module>avro-schemas</module>
         <module>stat-client</module>
         <module>stat-dto</module>
         <module>stat-server</module>
+        <module>collector</module>
+        <module>aggregator</module>
+        <module>analyzer</module>
     </modules>
-
 
     <dependencyManagement>
         <dependencies>
